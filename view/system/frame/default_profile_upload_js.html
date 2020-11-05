@@ -1,0 +1,83 @@
+{{define "profile_upload_js"}}
+    <script type="text/javascript" src="/static/js/bootstrap-notify.min.js"></script>
+    <script type="text/javascript" src="/static/js/lyear-loading.js"></script>
+    <script type="text/javascript">
+        var allowExt = ".png,.jpg,.jpeg,.bmp,.gif,.icon,vnd.microsoft.icon" // 允许的文件后缀
+        $(document).ready(function() {
+            $(document).on('click', '.file-browser', function() {
+                var $browser = $(this);
+                var file = $browser.closest('.file-group').find('[type="file"]');
+                file.on( 'click', function(e) {
+                    e.stopPropagation();
+                });
+                file.trigger('click');
+            });
+
+            $(document).on('change', '.file-group [type="file"]', function() {
+                var $this    = $(this);
+                var $input   = $(this)[0];
+                var $len     = $input.files.length;
+                var formFile = new FormData();
+
+                if ($len == 0) {
+                    return false;
+                } else {
+                    // var fileAccaccept = $this.attr('accaccept');
+                    var fileAccaccept = allowExt;
+                    var fileType      = $input.files[0].type;
+                    var type          = (fileType.substr(fileType.lastIndexOf("/") + 1)).toLowerCase();
+                    if (!type || fileAccaccept.indexOf(type) == -1) {
+                        var mes = '您上传图片的类型不符合(.jpg|.jpeg|.gif|.png|.bmp|.icon)';
+                        $.notify({message: mes},{type: 'danger',newest_on_top: true,delay:3000,timer:500,placement:{from:"top",align:"center"}});
+                        return false;
+                    }
+                    formFile.append("file", $input.files[0]);
+                }
+
+                var data = formFile;
+                var l = $('body').lyearloading({
+                    opacity: 0.2,
+                    spinnerSize: 'nm'
+                });
+
+                $.ajax({
+                    url: '/system/upload/def_upload',
+                    data: data,
+                    type: "POST",
+                    dataType: "json",
+                    //上传文件无需缓存
+                    cache: false,
+                    //用于对data参数进行序列化处理 这里必须false
+                    processData: false,
+                    //必须
+                    contentType: false,
+                    success: function (res) {
+                        l.destroy();
+                        if (res.code === 200) {
+                            changeAvatar(res.msg)
+                        } else {
+                            jQuery.notify({message: res.msg},{type: 'danger',newest_on_top: true,delay:3000,timer:500,placement:{from:"top",align:"center"}});
+                        }
+                    },
+                });
+            });
+        });
+        function changeAvatar(path) {
+            $.ajax({
+                url: '/system/user/avatar',
+                data: {"id":{{.ID}},"avatar":path},
+                type: "POST",
+                dataType: "json",
+                success: function (res) {
+                    if (res.code == 200) {
+                        $('#img-avatar').attr('src',res.msg)
+                        jQuery.notify({message: "更新成功"},{type: 'info',newest_on_top: true,delay:2000,timer:500,placement:{from:"top",align:"center"}});
+                        setTimeout(function () {location.reload();},2000);
+                    } else {
+                        jQuery.notify({message: res.msg},{type: 'danger',newest_on_top: true,delay:3000,timer:500,placement:{from:"top",align:"center"}});
+                    }
+                },
+            });
+        }
+    </script>
+{{end}}

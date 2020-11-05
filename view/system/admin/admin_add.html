@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+    <meta name="author" content="yinqi">
+    <link href="/static/frame/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/frame/materialdesignicons.min.css" rel="stylesheet">
+    <link href="/static/frame/bootstrap-select.min.css" rel="stylesheet">
+    <link href="/static/frame/style.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #ffffff
+        }
+
+        /*bootstrap-select插件用到的，也可以不用*/
+        .bootstrap-select.open .dropdown-toggle {
+            border-color: #33cabb !important;
+            -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(51, 202, 187, .6);
+            box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(51, 202, 187, .6);
+        }
+
+        .bootstrap-select.open .dropdown-menu.open {
+            border: 1px solid #ebebeb;
+        }
+
+        .example-form .input-group-addon {
+            min-width: 120px;
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" id="codeForm" class="row">
+                        <div class="form-group col-md-12">
+                            <label for="login_name">登陆账号</label>
+                            <input type="text" class="form-control" autocomplete="off" id="login_name" name="login_name" value=""/>
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="login_name">登陆密码</label>
+                            <input type="text" class="form-control" autocomplete="off" id="password" name="password" value="123456"/>
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="real_name">用户姓名</label>
+                            <input type="text" class="form-control" autocomplete="off" id="real_name" name="real_name" value="" />
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="phone">联系电话</label>
+                            <input type="text" class="form-control" id="phone" autocomplete="off" name="phone" value="" />
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="email">邮箱</label>
+                            <input type="text" class="form-control" id="email" autocomplete="off" name="email" value="" />
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label>角色分组</label>
+                            <div class="form-controls">
+                                {{range $el := .role}}
+                                    <label class="lyear-checkbox checkbox-inline checkbox-primary">
+                                        <input type="checkbox" name="role_ids" value="{{$el.ID}}"><span>{{$el.RoleName}}</span>
+                                    </label>
+                                {{end}}
+                            </div>
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="idname">状态</label>
+                            <div class="form-controls">
+                                <label class="lyear-switch switch-solid switch-primary">
+                                    <input type="checkbox" checked value="1" name="status"><span></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group col-md-12 m-b-0">
+                            <button type="button" onclick="submitForm()" class="btn btn-primary">立即提交</button>
+                            <button type="reset" class="btn btn-default">重 置</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="/static/frame/jquery.min.js"></script>
+<script src="/static/frame/bootstrap.min.js"></script>
+<script src="/static/frame/bootstrap-select.min.js"></script>
+<script type="text/javascript" src="/static/js/bootstrap-notify.min.js"></script>
+<script src="/static/frame/defaults-zh_CN.min.js"></script>
+<script>
+    $(document).ready(function () {
+        // 默认，这里是select插件的初始化
+        $('.selectpicker').selectpicker();
+        // 菜单标题默认点击×不关闭，这里自己关一下
+        $('.bootstrap-select').find('.close').on('click', function () {
+            $(this).parents('.bootstrap-select').removeClass('open');
+            $(this).parent().parent().prev('.dropdown-toggle').attr('aria-expanded', 'false');
+        });
+    });
+    function submitForm() {
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            url: "/system/admin/add",
+            data: $('#codeForm').serialize(),
+            success: function (result) {
+                if (result.code == 200) {
+                    $.notify({message: '执行成功~'}, {
+                        type: 'info',
+                        delay: 1000,
+                        timer: 500,
+                        placement: {from: "top", align: "center"}
+                    });
+                    setTimeout(function () {
+                        parent.location.reload();
+                    }, 1000)
+                } else {
+                    $.notify({message: result.msg}, {
+                        type: 'danger',
+                        delay: 1000,
+                        timer: 500,
+                        placement: {from: "top", align: "center"}
+                    });
+                }
+            },
+            error: function (result) {
+                $.notify({message: result.msg}, {
+                    type: 'danger',
+                    delay: 1000,
+                    timer: 500,
+                    placement: {from: "top", align: "center"}
+                });
+            }
+        });
+    }
+</script>
+</body>
+</html>

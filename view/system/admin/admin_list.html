@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Layui</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="/static/layui/css/layui.css" media="all">
+    {{template "layui_frame_css"}}
+</head>
+<body>
+{{template "layui_frame_search_field_admin"}}
+
+<table class="layui-hide" id="test" lay-filter="test"></table>
+
+<script type="text/html" id="toolbarDemo">
+    <div class="layui-row">
+        <div class="layui-col-xs2">
+            <a class="layui-btn layui-btn-sm btn-danger" data-type="tabAdd" onclick="createAdmin()">新增</a>
+        </div>
+    </div>
+</script>
+
+<script type="text/html" id="barDemo">
+    <a class="copyLink layui-btn btn-primary layui-btn-xs" lay-event="copy" ><i class="layui-icon" onmouseover="layer.tips('修改管理员信息', this, {tips: [3, '#000']});">&#xe64c;</i></a>
+    <a class="layui-btn btn-danger layui-btn-xs" lay-event="del"><i class="layui-icon">&#xe640;</i> </a>
+</script>
+
+<script src="/static/layui/layui.js" charset="utf-8"></script>
+<script src="/static/js/clipboard.min.js"></script>
+<script>
+    layui.use(['jquery','table','form','element','layer'], function(){
+        var table = layui.table,form = layui.form,layer = layui.layer,
+            $ = layui.$,element = layui.element;
+
+        var tableRen = table.render({
+            elem: '#test'
+            ,url:'/system/admin/list_json'
+            ,toolbar: '#toolbarDemo' //开启头部工具栏，并为其绑定左侧模板
+            ,defaultToolbar: ['filter', 'exports', 'print', { //自定义头部工具栏右侧图标。如无需自定义，去除该参数即可
+                title: '提示'
+                ,layEvent: 'LAYTABLE_TIPS'
+                ,icon: 'layui-icon-tips'
+            }]
+            ,title: '数据'
+            ,cols: [[
+                {field:'id', title: 'ID', align:'center',sort: true, width:150}
+                ,{field:'login_name',title: '登录账号'}
+                ,{field:'real_name', title: '真实姓名'}
+                ,{field:'phone', title: '联系电话'}
+                ,{field:'email', title: '电子邮箱'}
+                ,{field:'status', title:'状态',width: 100,templet:function (res) {
+                    if (res.status == "1"){return '<button class="layui-btn layui-btn-xs btn-success">正常</button>'}
+                    if (res.status == "0"){return '<button class="layui-btn layui-btn-xs btn-danger">禁用</button>'}
+                }}
+                ,{fixed:'right', title:'操作', toolbar: '#barDemo', width:100}
+            ]]
+            ,id: 'listReload'
+            ,page: true
+            ,done:function (res,currentCount) {
+                element.render();
+            }
+        });
+
+        // 监听搜索操作
+        form.on('submit(data-search-btn)', function (data) {
+            // 装载数据
+            var resultData = {};
+            if(data.field.managerId != '' )
+                resultData.id = data.field.managerId;
+            if(data.field.login_name != '' )
+                resultData.login_name = data.field.login_name;
+            if(data.field.real_name != '' )
+                resultData.real_name = data.field.real_name;
+            if(data.field.phone != '' )
+                resultData.phone = data.field.phone;
+            if(data.field.email != '' )
+                resultData.email = data.field.email;
+            //执行搜索重载
+            table.reload('listReload', {
+                url: '/system/admin/list_json',
+                method:'get',
+                page: {curr: 1},
+                where:resultData,
+                done:function () {
+                    $("input[name='managerId']").val("");       // 清空搜索信息
+                    $("input[name='login_name']").val("");
+                    $("input[name='real_name']").val("");
+                    $("input[name='phone']").val("");
+                    $("input[name='email']").val("");
+                    this.where = "";    // 清空搜索条件
+                }
+            }, 'data');
+            return false;
+        });
+
+        //监听行工具事件
+        table.on('tool(test)', function(obj){
+            var data = obj.data;
+            if(obj.event === 'del'){
+                layer.confirm('真的删除此管理员吗？', function(index){
+                    $.post("/system/admin/delete",{"id":data.id},function (res) {
+                        if (res.code == 200){
+                            layer.msg("删除成功");
+                            setTimeout(function () {
+                                location.reload();
+                            },1000)
+                        }else{
+                            layer.msg(res.msg);
+                        }
+                    })
+                    layer.close(index);
+                });
+            } else if(obj.event === 'copy'){
+                layer.open({
+                    type: 2,
+                    title: '修改管理员信息',
+                    shadeClose: true,
+                    shade: 0.8,
+                    area: ['380px', '80%'],
+                    content: '/system/admin/edit?id=' + data.id
+                });
+            }
+        });
+    });
+
+    function createAdmin(){
+        layer.open({
+            type: 2,
+            title: '新建管理员',
+            shadeClose: true,
+            shade: 0.8,
+            area: ['380px', '80%'],
+            content: '/system/admin/add' //iframe的url
+        });
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,101 @@
+{{template "layui_frame"}}
+{{template "layui_frame_search_field_role"}}
+
+<table class="layui-hide" id="test" lay-filter="test"></table>
+
+<script type="text/html" id="toolbarDemo">
+    <div class="layui-row">
+        <div class="layui-col-xs2">
+            <a class="layui-btn layui-btn-sm btn-danger" data-type="tabAdd" onclick="createRole()">新增</a>
+        </div>
+    </div>
+</script>
+
+<script type="text/html" id="barDemo">
+    <a class="copyLink layui-btn btn-primary layui-btn-xs" lay-event="copy" ><i class="layui-icon" onmouseover="layer.tips('修改权限分组信息', this, {tips: [3, '#000']});">&#xe64c;</i></a>
+    <a class="layui-btn btn-danger layui-btn-xs" lay-event="del"><i class="layui-icon">&#xe640;</i> </a>
+</script>
+
+<script src="/static/js/clipboard.min.js"></script>
+<script>
+    layui.use(['jquery','table','form','element','layer'], function(){
+        var table = layui.table,form = layui.form,layer = layui.layer,
+            $ = layui.$,element = layui.element;
+
+        var tableRen = table.render({
+            elem: '#test'
+            ,url:'/system/role/list_json'
+            ,toolbar: '#toolbarDemo' //开启头部工具栏，并为其绑定左侧模板
+            ,defaultToolbar: ['filter', 'exports', 'print', { //自定义头部工具栏右侧图标。如无需自定义，去除该参数即可
+                title: '提示'
+                ,layEvent: 'LAYTABLE_TIPS'
+                ,icon: 'layui-icon-tips'
+            }]
+            ,title: '数据'
+            ,cols: [[
+                {field:'id', title: 'ID', align:'center',sort: true, width:150}
+                ,{field:'role_name',title: '权限分组名称'}
+                ,{field:'detail', title: '备注'}
+                ,{field:'created_at', title: '创建时间'}
+                ,{fixed:'right', title:'操作', toolbar: '#barDemo', width:100}
+            ]]
+            ,id: 'listReload'
+            ,page: true
+            ,done:function (res,currentCount) {
+                element.render();
+            }
+        });
+
+        // 监听搜索操作
+        form.on('submit(data-search-btn)', function (data) {
+            // 装载数据
+            var resultData = {};
+            if(data.field.id != '' )
+                resultData.id = data.field.id;
+            if(data.field.role_name != '' )
+                resultData.role_name = data.field.role_name;
+            if(data.field.detail != '' )
+                resultData.detail = data.field.detail;
+            //执行搜索重载
+            table.reload('listReload', {
+                url: '/system/role/list_json',
+                method:'get',
+                page: {curr: 1},
+                where:resultData,
+                done:function () {
+                    $("input[name='id']").val("");       // 清空搜索信息
+                    $("input[name='role_name']").val("");
+                    $("input[name='detail']").val("");
+                    this.where = "";    // 清空搜索条件
+                }
+            }, 'data');
+            return false;
+        });
+
+        //监听行工具事件
+        table.on('tool(test)', function(obj){
+            var data = obj.data;
+            if(obj.event === 'del'){
+                layer.confirm('确定删除此角色吗？', function(index){
+                    $.post("/system/role/delete",{"id":data.id},function (res) {
+                        if (res.code == 200){
+                            layer.msg("删除成功");
+                            setTimeout(function () {
+                                location.reload();
+                            },1000)
+                        }else{
+                            layer.msg(res.msg);
+                        }
+                    })
+                    layer.close(index);
+                });
+            } else if(obj.event === 'copy'){
+                window.location.href = '/system/role/edit?id=' + data.id
+            }
+        });
+    });
+
+    function createRole(){
+        window.location.href = "/system/role/add"
+    }
+</script>
